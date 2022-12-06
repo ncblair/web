@@ -56,7 +56,7 @@ function init() {
         loudness = Math.min(1.0, loudness + 0.01)
     }
     oscillator.frequency.value = 440;
-    gainNode.gain.value = speed * maxVol;
+    gainNode.gain.value = (1.0 - min(speed, 1.0)) * maxVol;
   }
 
   isAppInit = true;
