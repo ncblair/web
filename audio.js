@@ -22,7 +22,7 @@ function init() {
   gainNode.connect(audioCtx.destination);
 
   const maxFreq = 6000;
-  const maxVol = 0.02;
+  const maxVol = 0.2;
   const initialVol = 0.001;
 
   // set options for the oscillator
@@ -56,7 +56,7 @@ function init() {
         loudness = Math.min(1.0, loudness + 0.01)
     }
     oscillator.frequency.value = 440;
-    gainNode.gain.value = loudness * maxVol;
+    gainNode.gain.value = speed * maxVol;
   }
 
   isAppInit = true;
