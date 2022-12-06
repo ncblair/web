@@ -61,3 +61,18 @@ function init() {
 
   isAppInit = true;
 }
+
+function getPerm() {
+    // feature detect
+    if (typeof DeviceMotionEvent.requestPermission === 'function') {
+      DeviceMotionEvent.requestPermission()
+        .then(permissionState => {
+          if (permissionState === 'granted') {
+            console.log("granted 1");
+          }
+        })
+        .catch(console.error);
+    } else {
+      console.log("denied");
+    }
+  }
