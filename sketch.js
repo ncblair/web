@@ -1,14 +1,19 @@
-let fbo_u0;
-let fbo_u1;
+let fbo_ux0;
+let fbo_ux1;
+let fbo_uy0;
+let fbo_uy1;
 let fbo_s0;
 let fbo_s1;
 let fbo_source;
+let fbo_force;
 let fbo_temp;
 
 let display_mouse_shader;
 let add_forces_shader;
 let lin_solve_shader;
+let advect_shader;
 let shdr2;
+let frame = 0;
 const FPS = 30;
 const DT = 0.5;
 const DIM = 512;
@@ -20,9 +25,12 @@ function setup() {
     const canvas = createCanvas(DIM, DIM, WEBGL);
     fbo_s0 = new p5Fbo({renderer: canvas, width: DIM, height: DIM, wrapMode: REPEAT, floatTexture: true});
     fbo_s1 = new p5Fbo({renderer: canvas, width: DIM, height: DIM, wrapMode: REPEAT, floatTexture: true});
-    fbo_u0 = new p5Fbo({renderer: canvas, width: DIM, height: DIM, wrapMode: REPEAT, floatTexture: true});
-    fbo_u1 = new p5Fbo({renderer: canvas, width: DIM, height: DIM, wrapMode: REPEAT, floatTexture: true});
+    fbo_ux0 = new p5Fbo({renderer: canvas, width: DIM, height: DIM, wrapMode: REPEAT, floatTexture: true});
+    fbo_ux1 = new p5Fbo({renderer: canvas, width: DIM, height: DIM, wrapMode: REPEAT, floatTexture: true});
+    fbo_uy0 = new p5Fbo({renderer: canvas, width: DIM, height: DIM, wrapMode: REPEAT, floatTexture: true});
+    fbo_uy1 = new p5Fbo({renderer: canvas, width: DIM, height: DIM, wrapMode: REPEAT, floatTexture: true});
     fbo_source = new p5Fbo({renderer: canvas, width: DIM, height: DIM, wrapMode: REPEAT, floatTexture: true});
+    fbo_force = new p5Fbo({renderer: canvas, width: DIM, height: DIM, wrapMode: REPEAT, floatTexture: true});
     fbo_temp = new p5Fbo({renderer: canvas, width: DIM, height: DIM, wrapMode: REPEAT, floatTexture: true});
     // fbo2 = new p5Fbo({renderer: canvas, width: DIM, height: DIM, floatTexture: true});
     frameRate(FPS);
@@ -30,6 +38,7 @@ function setup() {
     display_mouse_shader = loadShader("sketch.vert", "display_mouse_pos.frag");
     add_forces_shader = loadShader("sketch.vert", "add_forces.frag");
     lin_solve_shader = loadShader("sketch.vert", "lin_solve.frag");
+    advect_shader = loadShader("sketch.vert", "advect.frag");
     // shdr2 = loadShader("sketch.vert", "change_color.frag");
 }
 
@@ -47,18 +56,16 @@ function draw() {
     fbo_source.end();
 
     // vstep(fbo_u0, fbo_u1);
-    sstep(fbo_s0, fbo_s1, fbo_source, fbo_u0);
-
-    // fbo_s0.begin();
-    // add_forces_shader.setUniform("field", fbo_s0.getTexture());
-    // add_forces_shader.setUniform("forces", fbo_source.getTexture());
-    // add_forces_shader.setUniform("dt", 1.0 / FPS);
-    // clear();
-    // shader(add_forces_shader);
-    // quad(-1, -1, 1, -1, 1, 1, -1, 1);
-    // fbo_s0.end();
+    if (frame % 2 == 0) {
+        vstep(fbo_ux0, fbo_uy0, fbo_ux1, fbo_uy1, fbo_force);
+    } else {
+        vstep(fbo_ux1, fbo_uy1, fbo_ux0, fbo_uy0, fbo_force);
+    }
+    sstep(fbo_s0, fbo_s1, fbo_source, fbo_ux0, fbo_uy0);
 
     fbo_s0.draw();
+
+    frame++;
 
 
     // shdr2.setUniform("inputTexture", fbo.getTexture());
@@ -104,49 +111,118 @@ function linSolve(x, x_prev, a, c) {
     }
 }
 
+function advect(d, d0, ux, uy) {
+    d.begin();
+    advect_shader.setUniform("prev", d0.getTexture());
+    advect_shader.setUniform("vel_x", ux.getTexture());
+    advect_shader.setUniform("vel_y", uy.getTexture());
+    advect_shader.setUniform("dt", DT);
+    clear();
+    shader(advect_shader);
+    quad(-1, -1, 1, -1, 1, 1, -1, 1);
+    d.end();
+}
+
+function project(ux, uy, ux_prev, uy_prev) {
+    let h = 1.0 / DIM;
+    ux_prev.begin();
+    clear(0, 0, 0, 1);
+    quad(-1, -1, 1, -1, 1, 1, -1, 1);
+    ux_prev.end();
+    project_shader_1.setUniform("h", h);
+    project_shader_1.setUniform("resolution", DIM);
+    uy_prev.begin();
+    project_shader_1.setUniform("vel_x", ux.getTexture());
+    project_shader_1.setUniform("vel_y", uy.getTexture());
+    clear();
+    shader(project_shader_1);
+    quad(-1, -1, 1, -1, 1, 1, -1, 1);
+    uy_prev.end();
+    linSolve(ux_prev, uy_prev, 1, 4);
+    project_shader_2.setUniform("h", h);
+    project_shader_2.setUniform("resolution", DIM);
+    project_shader_3.setUniform("h", h);
+    project_shader_3.setUniform("resolution", DIM);
+    fbo_temp.begin();
+    project_shader_2.setUniform("input", ux.getTexture());
+    project_shader_2.setUniform("p", ux_prev.getTexture());
+    clear();
+    shader(project_shader_2);
+    quad(-1, -1, 1, -1, 1, 1, -1, 1);
+    fbo_temp.end();
+    fbo_temp.copyTo(ux);
+    fbo_temp.begin();
+    project_shader_3.setUniform("input", uy.getTexture());
+    project_shader_3.setUniform("p", uy_prev.getTexture());
+    clear();
+    shader(project_shader_3);
+    quad(-1, -1, 1, -1, 1, 1, -1, 1);
+    fbo_temp.end();
+    fbo_temp.copyTo(uy);
+}
+
+// def project(self, u, u_prev):
+//     h = 1 / self.gridsize
+//     u_prev[0] = 0
+//     u_prev[1] = -0.5 * h * (np.roll(u[0], 1, axis=-2) - np.roll(u[0], -1, axis=-2) + np.roll(u[1], -1, axis=-1) - np.roll(u[1], 1, axis=-1))
+//     self.linSolve(u_prev[0], u_prev[1], 1, 4)
+//     u[0] -= 0.5 * (np.roll(u_prev[0], 1, axis=0) - np.roll(u_prev[0], -1, axis=0)) / h
+//     u[1] -= 0.5 * (np.roll(u_prev[0], 1, axis=1) - np.roll(u_prev[0], -1, axis=1)) / h
+
+function add_forces(input, out, forces) {
+    out.begin();
+    add_forces_shader.setUniform("field", input.getTexture());
+    add_forces_shader.setUniform("forces", forces.getTexture());
+    add_forces_shader.setUniform("dt", DT);
+    clear();
+    shader(add_forces_shader);
+    quad(-1, -1, 1, -1, 1, 1, -1, 1);
+    out.end();
+}
+
 // def linSolve(self, x, x_prev, a, c, iters=20):
     // # solve for x using Gauss-Seidel relaxation
     // for i in range(iters):
     //     x[:] = (x_prev + a * (np.roll(x, 1, axis=-2) + np.roll(x, -1, axis=-2) + np.roll(x, 1, axis=-1) + np.roll(x, -1, axis=-1))) / (c)
 
-function sstep(scalar, scalar_prev, source, vel) {
+function sstep(scalar, scalar_prev, source, vel_x, vel_y) {
     // ADD FORCES
-    fbo_temp.begin();
-    add_forces_shader.setUniform("field", scalar.getTexture());
-    add_forces_shader.setUniform("forces", source.getTexture());
-    add_forces_shader.setUniform("dt", DT);
-    clear();
-    shader(add_forces_shader);
-    quad(-1, -1, 1, -1, 1, 1, -1, 1);
-    fbo_temp.end();
+    add_forces(scalar, fbo_temp, source);
     fbo_temp.copyTo(scalar);
-
     // DIFFUSE
     let a = DIFF * DIM * DIM * DT;
-    // scalar_prev, scalar = scalar, scalar_prev;
     linSolve(scalar_prev, scalar, a, 1.0 + 4.0*a);
-
-    // scalar_prev, scalar = scalar, scalar_prev;
-    scalar_prev.copyTo(scalar);
     // ADVECT
-    // advect(scalar_prev, scalar, vel);
+    advect(scalar, scalar_prev, vel_x, vel_y);
 }
 
-function vstep(u, u_prev) {
-    u.begin();
-    add_forces_shader.setUniform("field", u.getTexture());
-    clear();
-    shader(add_forces_shader);
-    quad(-1, -1, 1, -1, 1, 1, -1, 1);
-    u.end();
 
-    // u += self.dt * F
-    // u, u_prev = u_prev, u
-    // let a = VISC * DIM * DIM / FPS;
-    // self.linSolve(u, u_prev, a, 1 + 4*a)
-    // self.project(u, u_prev)
-    // u, u_prev = u_prev, u
-    // self.advect(u[0], u_prev[0], u_prev)
-    // self.advect(u[1], u_prev[1], u_prev)
-    // self.project(u, u_prev)
+// def vstep(self, u, u_prev, F):
+//     u += self.dt * F
+//     u, u_prev = u_prev, u
+//     a = self.dt * self.visc * self.gridsize * self.gridsize
+//     self.linSolve(u, u_prev, a, 1 + 4*a)
+//     self.project(u, u_prev)
+//     u, u_prev = u_prev, u
+//     self.advect(u[0], u_prev[0], u_prev)
+//     self.advect(u[1], u_prev[1], u_prev)
+//     self.project(u, u_prev)
+
+function vstep(ux, uy, ux_prev, uy_prev, F) {
+    // ADD FORCES
+    add_forces(ux, fbo_temp, F);
+    fbo_temp.copyTo(ux);
+    add_forces(uy, fbo_temp, F);
+    fbo_temp.copyTo(uy);
+    // DIFFUSE
+    let a = VISC * DIM * DIM * DT;
+    linSolve(ux_prev, ux, a, 1.0 + 4.0*a);
+    linSolve(uy_prev, uy, a, 1.0 + 4.0*a);
+    // PROJECT
+    project(ux_prev, uy_prev, ux, uy);
+    // ADVECT
+    advect(ux, ux_prev, ux_prev, uy_prev);
+    advect(uy, uy_prev, ux_prev, uy_prev);
+    // PROJECT
+    project(ux, uy, ux_prev, uy_prev);
 }
