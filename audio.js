@@ -55,6 +55,7 @@ function init() {
     else {
         loudness = Math.min(1.0, loudness + 0.01)
     }
+    console.log(speed);
     oscillator.frequency.value = 440;
     gainNode.gain.value = (1.0 - min(speed, 1.0)) * maxVol;
   }
