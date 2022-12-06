@@ -1,9 +1,8 @@
 let isAppInit = false;
 
-window.addEventListener("keydown", init);
-window.addEventListener("click", init);
-window.addEventListener("tap", init);
-
+// window.addEventListener("keydown", init);
+// window.addEventListener("click", init);
+// window.addEventListener("tap", init);
 
 function init() {
   if (isAppInit) {
