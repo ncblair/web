@@ -2,6 +2,7 @@ let isAppInit = false;
 
 window.addEventListener("keydown", init);
 window.addEventListener("click", init);
+window.addEventListener("touchstart", init);
 
 function init() {
   if (isAppInit) {
