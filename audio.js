@@ -5,9 +5,6 @@ window.addEventListener("click", init);
 window.addEventListener("touchstart", init);
 
 
-init();
-
-
 function init() {
   if (isAppInit) {
     return;
