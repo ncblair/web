@@ -193,17 +193,17 @@
 //         }
 //     }
 
-//     function advect(d, d0, ux, uy) {
-//         d.begin();
-//         advect_shader.setUniform("prev", d0.getTexture());
-//         advect_shader.setUniform("vel_x", ux.getTexture());
-//         advect_shader.setUniform("vel_y", uy.getTexture());
-//         advect_shader.setUniform("dt", DT);
-//         clear();
-//         shader(advect_shader);
-//         quad(-1, -1, 1, -1, 1, 1, -1, 1);
-//         d.end();
-//     }
+    // function advect(d, d0, ux, uy) {
+    //     d.begin();
+    //     advect_shader.setUniform("prev", d0.getTexture());
+    //     advect_shader.setUniform("vel_x", ux.getTexture());
+    //     advect_shader.setUniform("vel_y", uy.getTexture());
+    //     advect_shader.setUniform("dt", DT);
+    //     clear();
+    //     shader(advect_shader);
+    //     quad(-1, -1, 1, -1, 1, 1, -1, 1);
+    //     d.end();
+    // }
 
 //     function self_advect(out, x, y, dir) {
 //         out.begin();
@@ -314,7 +314,7 @@ const s1 = ( sketch ) => {
         // fbo_s0 = new p5Fbo({renderer: canvas, width: DIM, height: DIM, wrapMode: REPEAT, floatTexture: true});
         // fbo2 = new p5Fbo({renderer: canvas, width: DIM, height: DIM, floatTexture: true});
         sketch.frameRate(FPS);
-        // Lets load a shader as well. 
+        // Lets load a shader as well.
         mountain_shader = sketch.loadShader("sketch.vert", "mountain_of_work.frag");
 
         mountain_vid.size(sketch.width, DIM);
