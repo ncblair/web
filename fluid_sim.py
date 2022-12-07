@@ -4,8 +4,8 @@ import matplotlib.animation as animation
 
 GRIDSIZE = 200
 DT = 0.1
-DIFF = 0.01
-VISC = 0.1
+DIFF = 0.0003
+VISC = 0.001
 
 def draw(img):
     plt.pause(.001)

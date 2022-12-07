@@ -5,13 +5,15 @@ class p5Fbo {
 		height,
 		interpolationMode = LINEAR,
 		wrapMode = CLAMP,
-		floatTexture = false
+		floatTexture = false,
+		instance = null
 	} = {}) {
 		this.width = width;
 		this.height = height;
 		this.gl = renderer.GL;
 		const gl = this.gl;
 		this.renderer = renderer;
+		this.instance = instance;
 
 		// Create and bind texture
 		let im = new p5.Image(this.width, this.height);
@@ -133,8 +135,13 @@ class p5Fbo {
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 		gl.bindTexture(gl.TEXTURE_2D, null);
 		gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-		resetShader();
-
+		if (this.instance != null) {
+			this.instance.resetShader();
+		}
+		else {
+			resetShader();
+		}
+		
 		// Restore original projection matrix
 		this.renderer._curCamera._computeCameraDefaultSettings();
 		this.renderer._curCamera._setDefaultCamera();
@@ -159,17 +166,33 @@ class p5Fbo {
 	// Draw at a given x, y, width, and height.
 	// You can call without any parameters to draw the fbo at full screen size
 	draw(x, y, w, h) {
-		x = x || 0;
-		y = y || 0;
-		w = w || width;
-		h = h || height;
-
-		push();
-		translate(x, y);
-		scale(1, -1);
-		texture(this.texture);
-		plane(w, h);
-		pop();
+		if (this.instance == null) {
+			x = x || 0;
+			y = y || 0;
+			w = w || width;
+			h = h || height;
+	
+			push();
+			translate(x, y);
+			scale(1, -1);
+			texture(this.texture);
+			plane(w, h);
+			pop();
+		}
+		else {
+			this.instance.noStroke();
+			x = x || 0;
+			y = y || 0;
+			w = w || this.instance.width;
+			h = h || this.instance.height;
+	
+			this.instance.push();
+			this.instance.translate(x, y);
+			this.instance.scale(1, -1);
+			this.instance.texture(this.texture);
+			this.instance.plane(w, h);
+			this.instance.pop();
+		}
 	}
 
 

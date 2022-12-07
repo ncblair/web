@@ -15,5 +15,6 @@ void main() {
     // dist = min(dist, distance(vPosition - vec2(2.0, -2.0), mouse));
     // dist = min(dist, distance(vPosition + vec2(0.0, 2.0), mouse));
     // dist = min(dist, distance(vPosition - vec2(0.0, 2.0), mouse));
-    gl_FragColor = vec4(vec3(max(1.0 - 8.0*dist, 0.0)), 1.0);
+    // gl_FragColor = vec4(vec3(max(1.0 - 8.0*dist, 0.0)), 1.0);
+    gl_FragColor = vec4(min(3.0*vec3(1.0 - dist, 1.0, 1.0), 1.0), 1.0);
 }

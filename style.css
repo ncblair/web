@@ -1,0 +1,52 @@
+body {
+    border: 0px; 
+    margin: 0px;
+    padding: 0px;
+}
+
+canvas {
+    border: 0px; 
+    margin: 0px;
+    padding: 0px;
+}
+
+video {
+    border: 0px; 
+    margin: 0px;
+    padding: 0px;
+}
+
+
+#clouds {
+    border: 0px; 
+    margin: 0px;
+    padding: 0px;
+    position:fixed;
+    z-index:0;
+}
+
+#mountain_of_work {
+    border: 0px; 
+    margin: 0px;
+    padding: 0px;
+    position:fixed;
+    z-index:1;
+}
+
+#forest_floor {
+    border: 0px; 
+    margin: 0px;
+    padding: 0px;
+    position:fixed;
+    z-index:2;
+}
+
+#title {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #000;
+    text-align: center;
+    margin: 0 0 0.5em 0;
+    padding: 0;
+    z-index:3;
+}
